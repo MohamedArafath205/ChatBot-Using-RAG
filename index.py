@@ -1,63 +1,49 @@
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.embeddings import FastEmbedEmbeddings
-from langchain.chains import create_retrieval_chain
-from langchain_community.vectorstores import Chroma
-from langchain.schema.document import Document
-from langchain_ollama import OllamaEmbeddings
-from langchain.prompts import PromptTemplate
-from langchain_ollama import ChatOllama
+import os, json, requests, chromadb
+import pandas as pd
+from dotenv import load_dotenv
 
-def load_and_split_docs():
-    loader = PyPDFLoader("assets/Machine Learning.pdf")
-    pages = loader.load_and_split()
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1024,
-        chunk_overlap=100,
-        length_function=len,
-        add_start_index=True
-    )
-    chunks = text_splitter.split_documents(pages)
-    print(f"Split {len(pages)} documents into {len(chunks)} chunks")
-    embeddings = FastEmbedEmbeddings()
-    Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory="./sql_chroma_db")
+load_dotenv()
 
-def rag_chain():
-    model = ChatOllama(model="llama3")
-    prompt = PromptTemplate.from_template(
-        """
-        <s> [Instructions] You are a friendly assistant. Answer the user's question based only on the follwing context.
-        If you don't know the answer, just say that you don't know, don't try to make up an answer. [/Instructions]
-        </s>
-        [Instructions] Question: {input}
-        context: {context}
-        Answer: [/Instructions]
-        """
-    )
-    embeddings = FastEmbedEmbeddings()
-    vectorstore = Chroma(persist_directory="./sql_chroma_db", embedding_function=embeddings)
-    retriever = vectorstore.as_retriever(
-        search_type="similarity_score_threshold",
-        search_kwargs={
-            "score_threshold": 0.5,
-            "k": 3,
-        }
-    )
+CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
+CLOUDFLARE_API_KEY = os.getenv("CLOUDFLARE_API_TOKEN")
 
-    document_chain = create_stuff_documents_chain(model, prompt)
-    chain = create_retrieval_chain(retriever, document_chain)
+contents = []
+filenames = []
 
-    return chain
+path = "assets/"
+for filename in os.listdir(path):
+    if filename.endswith(".md"):
+        with open(path + filename) as f:
+            contents.append(f.read())
+            filenames.append(filename)
 
-def ask():
-    chain = rag_chain()
-    result = chain.invoke({"input": "What's the trade-off between bias and variance?"})
-    print("Answer:", result.get("answer", "No answer provided"))
-    if "context" in result:
-        for doc in result["context"]:
-            print("Source:", doc.metadata["source"])
+df = pd.DataFrame({"filename": filenames, "contents": contents})
 
-# Ensure you call load_and_split_docs before ask
-load_and_split_docs()
-ask()
+docs = []
+ids = []
+
+for row in df.itertuples():
+    docs.append(row.contents)
+    ids.append(row.filename)
+
+# preparing Cloudflare AI model request 
+# refer - https://www.youtube.com/watch?v=uxUoB1JopcQ
+model = "@cf/baai/bge-small-en-v1.5"
+url = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/run/{model}"
+payload = json.dumps({"text": docs})
+headers = {"Authorization": f"Bearer {CLOUDFLARE_API_KEY}"}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+result = response.json()
+
+embeddings = result["result"]["data"]
+
+# creating ChromaDB
+client = chromadb.PersistentClient(path="./chroma")
+collection = client.get_or_create_collection("Interviews")
+
+collection.add(
+    documents=docs,
+    embeddings=embeddings,
+    ids=ids,
+)
