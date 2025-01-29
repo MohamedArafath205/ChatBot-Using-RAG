@@ -1,7 +1,10 @@
+import os
 from flask import Flask, request
 from answer import answer_user_question
 
 app = Flask(__name__)
+
+port = int(os.environ.get("PORT", 10000))
 
 @app.route("/ask-question", methods=["POST", "GET"])
 def ask_question():
@@ -24,4 +27,4 @@ def show_api_info():
         ]
     }
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=port)
