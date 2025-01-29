@@ -1,6 +1,6 @@
-pypdf
-fastembed
 chromadb
-langchain
-langchain_ollama
-langchain_community
+flask
+requests
+python-dotenv
+pypi-json
+pandas
