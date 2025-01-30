@@ -47,5 +47,3 @@ def create_payload(sentence, context):
             }
         ]
     })
-
-print(answer_user_question("What is the difference between bias and variance trade off ?"))

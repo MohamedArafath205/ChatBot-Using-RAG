@@ -17,7 +17,9 @@ def ask_question():
 @app.route("/")
 def show_api_info():
     return {
-        "name": "RAG ChatBot API",
+        "name": "RAG ChatBot API for mock interview",
+        "creator": "M Mohamed Arafath",
+        "linkedin": "https://linkedin.com/in/mohamedarafath205",
         "endpoints": [
             {
                 "path": "/ask-question",
