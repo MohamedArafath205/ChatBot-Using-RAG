@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request
 from answer import answer_user_question
+from questions import get_random_questions
 
 app = Flask(__name__)
 
@@ -14,6 +15,14 @@ def ask_question():
     answer = answer_user_question(question)
     return {"question": question, "answer": answer}
 
+@app.route("/get-questions", methods=["POST", "GET"])
+def get_questions():
+    json_content = request.json
+    topic = json_content.get('topic')
+
+    questions = get_random_questions(topic)
+    return {"Topic": topic, "Questions": questions}
+
 @app.route("/")
 def show_api_info():
     return {
@@ -25,6 +34,11 @@ def show_api_info():
                 "path": "/ask-question",
                 "methods": ["POST", "GET"],
                 "description": "Ask a question and get an AI-generated answer"
+            },
+            {
+                "path": "/get-questions",
+                "methods": ["POST", "GET"],
+                "description": "Gives you a list of questions from the loaded PDF's"
             }
         ]
     }
