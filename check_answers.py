@@ -8,7 +8,7 @@ load_dotenv()
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
 CLOUDFLARE_API_KEY = os.getenv("CLOUDFLARE_API_TOKEN")
 
-def check_answer(question: str, answer: str):
+def check_answers(question: str, answer: str):
     headers = {
         "Authorization": f"Bearer {CLOUDFLARE_API_KEY}",
         "Content-Type": "application/json",

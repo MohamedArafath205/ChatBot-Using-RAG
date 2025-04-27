@@ -2,6 +2,7 @@ import os
 from flask import Flask, request
 from answer import answer_user_question
 from questions import get_random_questions
+from check_answers import check_answers
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -24,7 +25,7 @@ def check_answer():
     question = json_content.get('question')
     answer = json_content.get('answer')
 
-    evaluation = check_answer(question, answer)
+    evaluation = check_answers(question, answer)
     return {"question": question, "answer": answer, "evaluation": evaluation}
 
 @app.route("/get-questions", methods=["POST", "GET"])
