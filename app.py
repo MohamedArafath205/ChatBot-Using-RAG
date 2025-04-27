@@ -18,6 +18,15 @@ def ask_question():
     answer = answer_user_question(question)
     return {"question": question, "answer": answer}
 
+@app.route("/check-answer", methods=["POST", "GET"])
+def check_answer():
+    json_content = request.json
+    question = json_content.get('question')
+    answer = json_content.get('answer')
+
+    evaluation = check_answer(question, answer)
+    return {"question": question, "answer": answer, "evaluation": evaluation}
+
 @app.route("/get-questions", methods=["POST", "GET"])
 def get_questions():
     json_content = request.json
