@@ -2,10 +2,13 @@ import os
 from flask import Flask, request
 from answer import answer_user_question
 from questions import get_random_questions
+from flask_cors import CORS
 
 app = Flask(__name__)
 
 port = int(os.environ.get("PORT", 10000))
+
+CORS(app)
 
 @app.route("/ask-question", methods=["POST", "GET"])
 def ask_question():
